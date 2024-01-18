@@ -1,0 +1,407 @@
+// Author: Priyank Faldu
+// This code was submitted to
+// THE 2ND CACHE REPLACEMENT CHAMPIONSHIP, 2017
+// URL: http://crc2.ece.tamu.edu
+// CRC2 2017 Submission #6
+// Title: Reuse-Aware Management for Last-Level Caches
+
+//#include "../inc/champsim_crc2.h"
+//#include "../inc/leeway_nru.h"
+
+#include "cache.h"
+#include <cstdlib>
+#include <ctime>
+#include "leeway_nru.h"
+
+LDPT* ldpt;
+LeewayBlock** repl2;
+void CACHE::llc_initialize_replacement()
+{
+
+    cout << "Initializing Leeway NRU..." << endl;
+
+    num_sample_sets = 64;
+    llc_sets = 2048;
+    num_cores = 1;
+
+    //config_number = get_config_number();
+    //switch(config_number) {
+    //    case 1:
+    //    case 2:
+    //        num_cores = 1;
+    //        llc_sets = 2048;
+    //        num_sample_sets = 64;
+    //        break;
+    //    case 3:
+    //    case 4:
+    //        num_cores = 4;
+    //        llc_sets = 2048*4;
+    //        num_sample_sets = 64;
+    //        break;
+    //    case 5:
+    //    case 6:
+    //        num_cores = 1;
+    //        llc_sets = 2048*4;
+    //        num_sample_sets = 64*4;
+    //        break;
+    //    default:
+    //        cout << "Unknown config number: " << config_number << endl;
+    //        assert(0);
+    //}
+
+    cout << "config number: " << config_number << endl;
+    cout << "sets: " << llc_sets << endl;
+    cout << "assoc: " << llc_assoc << endl;
+    cout << "sampler_sets: " << num_sample_sets << endl;
+
+
+    repl2  = new LeewayBlock* [ llc_sets ];
+    assert(repl2);
+    set_types = new SetType[ llc_sets ];
+    assert(set_types);
+
+    RandomSetSelection(set_types, llc_sets, num_cores, REUSE_TYPES, num_sample_sets);
+
+    cout << "bypass_th " << bypass_th[ROP] << " " << bypass_th[BOP] << endl;
+
+    stat_threshold = 60000 / num_cores; // this is used to saturate all the miss/access counters
+
+    for ( int i = 0 ; i < num_cores ; i++ ) {
+        for ( int j = 0 ; j < REUSE_TYPES ; j++ ) {
+            random_counter[i][j] = 0;
+        }
+        for ( int j = 0 ; j < num_cores ; j++ ) {
+            misses[i][j][ROP] = 0;
+            misses[i][j][BOP] = 0;
+            accesses[i][j][ROP] = 0;
+            accesses[i][j][BOP] = 0;
+        }
+    }
+
+    for(unsigned int setIndex=0; setIndex<llc_sets; setIndex++) 
+    {
+        repl2[ setIndex ]  = new LeewayBlock[ llc_assoc ];
+        assert( repl2[setIndex] );
+
+        for(int way=0; way<llc_assoc; way++) 
+        {
+            repl2[ setIndex ][ way ].nru_bits = max_nru_bits;
+            repl2[ setIndex ][ way ].current_ld = -1;
+            repl2[ setIndex ][ way ].predicted_ld = max_nru_bits;
+            repl2[ setIndex ][ way ].signature = 0;
+        }
+    }
+
+    ldpt_sets = 512 * num_cores;
+    ldpt_assoc = 4;
+    ldpt = new LDPT(REUSE_TYPES, ldpt_sets, ldpt_assoc);
+    assert(ldpt);
+
+    if ( num_cores == 1 ) {
+        max_conservative_conf = 7;
+        max_aggressive_conf = 1;
+    } else {
+        max_conservative_conf = 7;
+        max_aggressive_conf = 2;
+    }
+    ldpt->setThreshold(ROP, max_aggressive_conf, max_conservative_conf);
+    ldpt->setThreshold(BOP, max_conservative_conf, max_aggressive_conf);
+
+    bypass_th[ROP]=1;
+    bypass_th[BOP]=5;
+
+    cout << "Structures initialized" << endl;
+}
+
+
+int32_t Get_Leeway_Victim(uint32_t cpu, uint32_t set, const BLOCK *current_set, uint64_t PC, uint64_t paddr, uint32_t type) {
+    LeewayBlock* blocks = repl2[set];
+    bool leader = ( set_types[set].owner == cpu && (set_types[set].type == ROP_SET || set_types[set].type == BOP_SET) );
+    int32_t instance = ldpt->getMyInstanceId(cpu, set); 
+    assert(instance == BOP || instance == ROP);
+
+    int32_t invalid_index = -1;
+    for ( int i = 0 ; i < llc_assoc ; i++ ) {
+        if ( !(current_set[i].valid) ) {
+            invalid_index = i;
+            invalid_blocks++;
+            // Evict an invalid block, if found
+            return invalid_index;
+        }
+    }
+
+    uint64_t sig = get_pc_trace(PC, cpu);
+    if ( type == PREFETCH ) {
+        sig = prefetch_sig;
+        instance = BOP;
+    } else if ( type == WRITEBACK ) {
+        sig = writeback_sig;
+        instance = BOP;
+    }
+
+    LDPT_ENTRY* bypass_entry = ldpt->findEntry(sig, instance); 
+    assert(bypass_entry);
+    if ( (type != WRITEBACK) ) {
+        // DO NOT BYPASS if WRITEBACK request
+        if ( bypass_entry->stable_ld < 0 && bypass_entry->variance_conf == 0 ) {
+            bool bypass = true;
+            if ( leader ) {
+                sampler_bp[instance]++;
+                random_counter[cpu][instance]++;
+                random_counter[cpu][instance] = random_counter[cpu][instance] % 512;
+                if ( random_counter[cpu][instance] < bypass_th[instance] ) {
+                    // Force allocation to retrain
+                    bypass = false;
+                }
+            }
+            if  ( bypass ) {
+#if 1
+                if ( leader ) {
+                    prediction_stat[instance+1][0]++;
+                } else {
+                    prediction_stat[0][0]++;
+                }
+#endif
+                bypass_applied++;
+                return -1;
+            } else {
+                bypass_skipped++;
+            }
+        }
+    }
+
+    int dead = -1;
+    int lru = -1;
+    int victim_way = -1;
+    do {
+        for ( int i = 0 ; i < llc_assoc ; i++ ) {
+            // due to 2 bits, predicted_ld can take values of -1, 0, 1, 2
+            // Thus, it should not predict blocks whose predicted_ld is 2 or 3
+            if ( (blocks[i].predicted_ld < (max_nru_bits-1)) && (blocks[i].nru_bits > blocks[i].predicted_ld) ) {
+                // Dead Block Found
+                dead = i;
+                victim_way = i;
+                break;
+            }
+            if ( blocks[i].nru_bits == max_nru_bits ) {
+                // keep track of lru block, in case no dead block found
+                lru = i;
+            }
+
+        }
+        if ( (lru < 0) && (dead < 0) ) {
+            // Neither dead block nor lru block found
+            for ( int i = 0 ; i < llc_assoc ; i++ ) {
+                blocks[i].nru_bits++;
+                if ( blocks[i].nru_bits > max_nru_bits ) {
+                    for ( int j = 0 ; j < llc_assoc ; j++ ) {
+                        cout << blocks[j].nru_bits << " " << blocks[j].predicted_ld <<  " " << repl2[set][j].nru_bits << endl;
+                    }
+                    assert(0);
+                }
+            }
+        }
+    } while ( lru < 0 && dead < 0 );
+
+    if ( dead >= 0 ) {
+        victim_way = dead;
+    } else {
+        victim_way = lru;
+    }
+    assert(victim_way>=0);
+    assert(victim_way<(int)llc_assoc);
+
+    if ( leader ) { 
+        if ( blocks[victim_way].signature != 0 && current_set[victim_way].valid) {
+            // if the block was inserted by the CPU which is tracking this set
+            if (!( blocks[victim_way].inst_type == ROP || blocks[victim_way].inst_type == BOP)) {
+                cout << victim_way << " " << blocks[victim_way].inst_type << " " << hex << blocks[victim_way].signature <<  dec << " " << cpu << " set: " << set << " " << (int)set_types[set].owner << " " << (int)set_types[set].type << endl;
+                assert(0);
+            }
+            ldpt->updateEntry(blocks[victim_way].signature, blocks[victim_way].current_ld, blocks[victim_way].inst_type); 
+            update_applied++;
+            sampler_update[instance]++;
+        } else {
+            update_skipped++;
+        }
+    }
+   
+    if ( blocks[victim_way].signature != writeback_sig && current_set[victim_way].valid) {
+        assert(victim_way>=0);
+        assert(victim_way<llc_assoc);
+    }
+    return victim_way;
+}
+
+
+void UpdateLeeway(uint32_t cpu, uint32_t set, uint32_t way, uint64_t paddr, uint64_t PC, uint64_t victim_addr, uint32_t type, uint8_t hit) {
+    LeewayBlock& block = repl2[set][way];
+    int32_t instance = ldpt->getMyInstanceId(cpu, set); 
+    assert(instance == BOP || instance == ROP);
+    bool leader = ( set_types[set].owner == cpu && (set_types[set].type == ROP_SET || set_types[set].type == BOP_SET) );
+
+    if ( set_types[set].type != FOLLOWER_SET ) {
+        if (!(instance < REUSE_TYPES)) {
+            cout << instance << " " << REUSE_TYPES << " " << set_types[set].owner << " " << set_types[set].type << " " << leader << " " << set << endl;
+            assert(0);
+        }
+        if ( set_types[set].type != FOLLOWER_SET ) {
+            // Update stats only for the sample sets
+            if (!( type == PREFETCH || type == WRITEBACK )) {
+                // Figure out which policy is used by the owner of the set; owner may not be this CPU
+                int32_t instance_s = ldpt->getMyInstanceId(set_types[set].owner, set);
+                assert(instance_s == BOP || instance_s == ROP);
+                assert(set_types[set].owner < num_cores);
+                assert(set_types[set].owner >= 0);
+                if ( accesses[set_types[set].owner][cpu][instance_s] < stat_threshold) {
+                    accesses[set_types[set].owner][cpu][instance_s]++;
+                }
+                if ( hit ) {
+                    if ( accesses[set_types[set].owner][cpu][instance_s] < stat_threshold) {
+                        //misses[set_types[set].owner][cpu][instance_s]--;
+                    }
+                } else {
+                    if ( accesses[set_types[set].owner][cpu][instance_s] < stat_threshold) {
+                        misses[set_types[set].owner][cpu][instance_s]++; // Miss for this CPU due to owner's policy
+                    }
+                }
+            }
+        }
+    }
+    CheckPolicyStatus();
+
+    if ( hit && (type != WRITEBACK) ) {
+        // Ignore hits for the WRITEBACKS
+        if ( leader ) {
+            // Learn Live distance for the leader sets
+            if ( block.nru_bits > block.current_ld ) {
+                block.current_ld = block.nru_bits;
+            }
+        }
+#if 1
+        if ( block.nru_bits > block.predicted_ld ) {
+            block.predicted_ld = block.nru_bits;
+        }
+#endif
+        block.nru_bits = 0;
+    } else if ( !hit ) {
+        uint64_t sig = get_pc_trace(PC, cpu);
+        if ( type == PREFETCH ) {
+            sig = prefetch_sig;
+            instance = BOP;
+        } else if ( type == WRITEBACK ) {
+            sig = writeback_sig;
+            instance = BOP;
+        }
+
+
+        LDPT_ENTRY* miss_entry = ldpt->findEntry(sig, instance); 
+        assert(miss_entry);
+
+        block.signature = sig;
+        block.predicted_ld = miss_entry->stable_ld;
+        block.current_ld = -1;
+        block.nru_bits = 0;
+        if ( !leader ) {
+            // If this cpu is not tracking this set, it won't have signature field and won't update LDPT
+            block.signature = 0;
+            block.inst_type = REUSE_TYPES;
+        } else {
+            assert( instance == BOP || instance == ROP );
+            block.inst_type = instance;
+            sampler_read[instance]++;
+        }
+        if ( leader ) {
+            if (!(miss_entry->stable_ld <= max_nru_bits) ) {
+                cout << miss_entry->stable_ld << " " << max_nru_bits << endl;
+                assert(0);
+            }
+            assert(miss_entry->stable_ld >= -1);
+            prediction_stat[instance+1][miss_entry->stable_ld+1]++;
+        } else {
+            prediction_stat[0][miss_entry->stable_ld+1]++;
+        }
+    }
+}
+
+void CACHE::llc_replacement_final_stats()
+{
+    ldpt->display_stats();
+    for ( int j = 0 ; j <= REUSE_TYPES ; j++ ) {
+        if ( j != 0 ) {
+            cout << setw(30) << policyStr(j-1);
+        } else {
+            cout << setw(30) << "FOLLOWERS";
+        }
+        for ( int i = 0 ; i < max_nru_bits+2 ; i++ ) {
+            cout << setw(20) << prediction_stat[j][i];
+        }
+        cout << endl;
+    }
+    cout << setw(20) << "bypass_applied" << setw(20) << bypass_applied
+        << setw(20) << "bypass_skipped" << setw(20) << bypass_skipped << endl;
+
+    cout << setw(20) << "update_applied" << setw(20) << update_applied
+        << setw(20) << "update_skipped" << setw(20) << update_skipped << endl;
+
+    cout << setw(20) << "sampler_bp[ROP]" << setw(20) << sampler_bp[ROP] 
+        << setw(20) << "sampler_bp[BOP]" << setw(20) << sampler_bp[BOP]<< endl;
+
+    cout << setw(20) << "sampler_read[ROP]" << setw(20) << sampler_read[ROP] 
+        << setw(20) << "sampler_read[BOP]" << setw(20) << sampler_read[BOP]<< endl;
+
+    cout << setw(20) << "sampler_update[ROP]" << setw(20) << sampler_update[ROP] 
+        << setw(20) << "sampler_update[BOP]" << setw(20) << sampler_update[BOP]<< endl;
+
+    cout << setw(20) << "invalid blocks replaced" << setw(20) << invalid_blocks << endl;
+}
+
+//void PrintStats_Heartbeat() {
+//    PrintStats();
+//}
+
+uint32_t CACHE::llc_find_victim (uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t PC, uint64_t paddr, uint32_t type)
+{
+    assert(set < (uint32_t)llc_sets);
+    assert(cpu < (uint32_t)num_cores);
+    int vicWay = Get_Leeway_Victim(cpu, set, current_set, PC, paddr, type);
+    if ( vicWay < 0 ) {
+        assert(type != WRITEBACK);
+        if ( set_types[set].type != FOLLOWER_SET ) {
+            if (!( type == PREFETCH || type == WRITEBACK )) {
+                int32_t instance_s = ldpt->getMyInstanceId(set_types[set].owner, set);
+                assert(instance_s == BOP || instance_s == ROP);
+                assert(set_types[set].owner < num_cores);
+                assert(set_types[set].owner >= 0);
+                if ( set_types[set].type != FOLLOWER_SET ) {
+                    if (!( type == PREFETCH || type == WRITEBACK )) {
+                        if ( accesses[set_types[set].owner][cpu][instance_s] < stat_threshold) {
+                            accesses[set_types[set].owner][cpu][instance_s]++;
+                            misses[set_types[set].owner][cpu][instance_s]++; // Miss for this CPU due to owner's policy
+                        }
+                    }
+                }
+            }
+        }
+        CheckPolicyStatus();
+    }
+
+    if ( vicWay < 0 ) {
+        return llc_assoc;
+    }
+    assert(vicWay >= 0);
+    assert(vicWay < llc_assoc);
+    return vicWay;
+}
+
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t paddr, uint64_t PC, uint64_t victim_addr, uint32_t type, uint8_t hit) {
+    if ( way == llc_assoc ) {
+        // it was bypassed
+        return ;
+    }
+    assert(set < (uint32_t)llc_sets);
+    assert(way < (uint32_t)llc_assoc);
+    assert(cpu < (uint32_t)num_cores);
+    UpdateLeeway(cpu, set, way, paddr, PC, victim_addr, type, hit);
+}
+
