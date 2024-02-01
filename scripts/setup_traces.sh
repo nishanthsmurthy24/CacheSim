@@ -1,3 +1,5 @@
+mkdir $PYTHIA_HOME/traces
+
 # Download Traces
 perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
 
