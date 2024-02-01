@@ -88,20 +88,29 @@ The infrastructure has been tested with the following system configuration:
 
 0. Install necessary prequisites
     ```bash
-    sudo apt install perl
+    
+    wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    bash Miniforge3-$(uname)-$(uname -m).sh
+    pip3 install gdown
+    
     ```
+    
 1. Clone the GitHub repo
    
    ```bash
-   git clone https://github.com/CMU-SAFARI/Pythia.git
+   git clone https://github.com/nishanthsmurthy24/CacheSim.git
    ```
-2. Clone the bloomfilter library inside Pythia home directory
+   or
+   ```bash
+   git clone git@github.com:nishanthsmurthy24/CacheSim.git
+   ```
+3. Clone the bloomfilter library inside Pythia home directory
    
    ```bash
    cd Pythia
    git clone https://github.com/mavam/libbf.git libbf
    ```
-3. Build bloomfilter library. This should create the static `libbf.a` library inside `build` directory
+4. Build bloomfilter library. This should create the static `libbf.a` library inside `build` directory
    
     ```bash
     cd libbf
@@ -109,7 +118,7 @@ The infrastructure has been tested with the following system configuration:
     cmake ../
     make clean && make
     ```
-4. Build Pythia for single/multi core using build script. This should create the executable inside `bin` directory.
+5. Build Pythia for single/multi core using build script. This should create the executable inside `bin` directory.
    
    ```bash
    cd $PYTHIA_HOME
@@ -118,11 +127,20 @@ The infrastructure has been tested with the following system configuration:
    ```
    Please use `build_champsim_highcore.sh` to build ChampSim for more than four cores.
 
-5. _Set appropriate environment variables as follows:_
+6. _Set appropriate environment variables as follows:_
 
     ```bash
     source setvars.sh
     ```
+    or add these lines in your `.bashrc`
+   ```
+   export PYTHIA_HOME=~/CacheSim
+   export PERL5LIB=$PERL5LIB:$PYTHIA_HOME/scripts
+
+   alias traces="cd $PYTHIA_HOME/traces"
+
+   alias exp="cd $PYTHIA_HOME/experiments/"
+   ```
 
 ## Preparing Traces
 0. Install the megatools executable
