@@ -1,9 +1,3 @@
-pip3 install gdown
-
-mkdir $PYTHIA_HOME/traces
-
-cd $PYTHIA_HOME/scripts
-
 # Download Traces
 perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
 
