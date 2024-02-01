@@ -82,7 +82,6 @@ The infrastructure has been tested with the following system configuration:
   * CMake v3.20.2
   * md5sum v8.26
   * Perl v5.24.1
-  * [Megatools 1.11.0](https://megatools.megous.com) (Note that v1.9.98 does **NOT** work)
 
 ## Installation
 
@@ -122,8 +121,8 @@ The infrastructure has been tested with the following system configuration:
    
    ```bash
    cd $PYTHIA_HOME
-   # ./build_champsim.sh <l1_pref> <l2_pref> <llc_pref> <ncores>
-   ./build_champsim.sh multi multi no 1
+   # ./build_champsim.sh <l1_pref> <l2_pref> <llc_pref> <ncores> <llc_repl>
+   ./build_champsim.sh multi multi no 1 lru
    ```
    Please use `build_champsim_highcore.sh` to build ChampSim for more than four cores.
 
@@ -143,21 +142,12 @@ The infrastructure has been tested with the following system configuration:
    ```
 
 ## Preparing Traces
-0. Install the megatools executable
+
+1. We are using the `download_traces.pl` perl script to download necessary ChampSim traces used in our paper, this is abstracted in the `setup_traces.sh`
 
     ```bash
-    cd $PYTHIA_HOME/scripts
-    wget https://megatools.megous.com/builds/builds/megatools-1.11.1.20230212-linux-x86_64.tar.gz
-    tar -xvf megatools-1.11.1.20230212-linux-x86_64.tar.gz 
-    ```
-> Note: The megatools link might change in the future depending on latest release. Please recheck the link if the download fails.
-
-1. Use the `download_traces.pl` perl script to download necessary ChampSim traces used in our paper.
-
-    ```bash
-    mkdir $PYTHIA_HOME/traces/
     cd $PYTHIA_HOME/scripts/
-    perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
+    ./setup_traces.sh
     ```
 > Note: The script should download **233** traces. Please check the final log for any incomplete downloads. The total size of all traces would be **~52 GB**.
 
