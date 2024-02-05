@@ -100,7 +100,7 @@ foreach $trace (@trace_info)
 		}
 		else
 		{
-			$slurm_cmd = "sbatch -p $slurm_partition --mincpus=1 -t 4:00:00";
+			$slurm_cmd = "sbatch -p $slurm_partition --mincpus=1 -t 3:00:00";
 			if (defined $include_list)
 			{
 				$slurm_cmd = $slurm_cmd." --nodelist=${include_nodes_list}";
