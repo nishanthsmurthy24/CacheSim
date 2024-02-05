@@ -11,7 +11,7 @@ my $exp_file;
 my $exe;
 my $local = "0";
 my $ncores = 1;
-my $slurm_partition = "slurm_part";
+my $slurm_partition = "small";
 my $exclude_list;
 my $include_list;
 my $extra;
