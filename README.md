@@ -183,7 +183,7 @@ Our experimental workflow consists of two stages: (1) launching experiments, and
    
       ```bash
       cd $PYTHIA_HOME/experiments/
-      perl ../scripts/create_jobfile.pl --exe $PYTHIA_HOME/bin/perceptron-multi-multi-no-ship-1core --tlist MICRO21_1C.tlist --exp MICRO21_1C.exp --local 0 --slurm_partition small> jobfile.sh
+      perl ../scripts/create_jobfile.pl --exe $PYTHIA_HOME/bin/perceptron-multi-multi-no-ship-1core --tlist MICRO21_1C.tlist --exp MICRO21_1C.exp --local 0 --slurm_partition small > jobfile.sh
       ```
 
 4. Go to a run directory (or create one) inside `experiements` to launch runs in the following way:
