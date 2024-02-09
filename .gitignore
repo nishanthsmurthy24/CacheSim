@@ -21,3 +21,5 @@ tags
 *.out
 *.err
 libbf/
+jobfile.sh
+*.csv
