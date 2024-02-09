@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib '/mnt/panzer/rahbera/ChampSim/scripts';
+use lib '~/Project/CacheSim/scripts';
 use warnings;
 use Math::Combinatorics;
 
