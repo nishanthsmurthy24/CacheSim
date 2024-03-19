@@ -83,6 +83,35 @@ The infrastructure has been tested with the following system configuration:
   * md5sum v8.26
   * Perl v5.24.1
 
+## Preparing Traces
+
+1. We are using the `download_traces.pl` perl script to download necessary ChampSim traces used in our paper, this is abstracted in the `setup_traces.sh`
+
+    ```bash
+    cd $PYTHIA_HOME/scripts/
+    ./setup_traces.sh
+    ```
+> Note: The script should download **233** traces. Please check the final log for any incomplete downloads. The total size of all traces would be **~52 GB**.
+
+2. Once the trace download completes, please verify the checksum as follows. _Please make sure all traces pass the checksum test._
+
+    ```bash
+    cd $PYTHIA_HOME/traces
+    md5sum -c ../scripts/artifact_traces.md5
+    ```
+
+3. If the traces are downloaded in some other path, please change the full path in `experiments/MICRO21_1C.tlist` and `experiments/MICRO21_4C.tlist` accordingly.
+
+### More Traces
+1. We are also releasing a new set of ChampSim traces from [PARSEC 2.1](https://parsec.cs.princeton.edu) and [Ligra](https://github.com/jshun/ligra). The trace drop-points are measured using [Intel Pinplay](https://software.intel.com/content/www/us/en/develop/articles/program-recordreplay-toolkit.html) and the traces are captured by the ChampSim PIN tool. The traces can be found in the following links. To download these traces in bulk, please use the "Download as ZIP" option from mega.io web-interface.
+      * PARSEC-2.1: https://bit.ly/champsim-parsec2
+      * Ligra: https://bit.ly/champsim-ligra
+   
+2. Our simulation infrastructure is completely compatible with all prior ChampSim traces used in CRC-2 and DPC-3. One can also convert the CVP-2 traces (courtesy of Qualcomm Datacenter Technologies) to ChampSim format using [the following converter](https://github.com/ChampSim/ChampSim/tree/master/cvp_tracer). The traces can be found in the follwing websites:
+     * CRC-2 traces: http://bit.ly/2t2nkUj
+     * DPC-3 traces: http://hpca23.cse.tamu.edu/champsim-traces/speccpu/
+     * CVP-2 traces: https://www.microarch.org/cvp1/cvp2/rules.html
+
 ## Installation
 
 0. Install necessary prequisites
@@ -140,35 +169,6 @@ The infrastructure has been tested with the following system configuration:
 
    alias exp="cd $PYTHIA_HOME/experiments/"
    ```
-
-## Preparing Traces
-
-1. We are using the `download_traces.pl` perl script to download necessary ChampSim traces used in our paper, this is abstracted in the `setup_traces.sh`
-
-    ```bash
-    cd $PYTHIA_HOME/scripts/
-    ./setup_traces.sh
-    ```
-> Note: The script should download **233** traces. Please check the final log for any incomplete downloads. The total size of all traces would be **~52 GB**.
-
-2. Once the trace download completes, please verify the checksum as follows. _Please make sure all traces pass the checksum test._
-
-    ```bash
-    cd $PYTHIA_HOME/traces
-    md5sum -c ../scripts/artifact_traces.md5
-    ```
-
-3. If the traces are downloaded in some other path, please change the full path in `experiments/MICRO21_1C.tlist` and `experiments/MICRO21_4C.tlist` accordingly.
-
-### More Traces
-1. We are also releasing a new set of ChampSim traces from [PARSEC 2.1](https://parsec.cs.princeton.edu) and [Ligra](https://github.com/jshun/ligra). The trace drop-points are measured using [Intel Pinplay](https://software.intel.com/content/www/us/en/develop/articles/program-recordreplay-toolkit.html) and the traces are captured by the ChampSim PIN tool. The traces can be found in the following links. To download these traces in bulk, please use the "Download as ZIP" option from mega.io web-interface.
-      * PARSEC-2.1: https://bit.ly/champsim-parsec2
-      * Ligra: https://bit.ly/champsim-ligra
-   
-2. Our simulation infrastructure is completely compatible with all prior ChampSim traces used in CRC-2 and DPC-3. One can also convert the CVP-2 traces (courtesy of Qualcomm Datacenter Technologies) to ChampSim format using [the following converter](https://github.com/ChampSim/ChampSim/tree/master/cvp_tracer). The traces can be found in the follwing websites:
-     * CRC-2 traces: http://bit.ly/2t2nkUj
-     * DPC-3 traces: http://hpca23.cse.tamu.edu/champsim-traces/speccpu/
-     * CVP-2 traces: https://www.microarch.org/cvp1/cvp2/rules.html
 
 ## Experimental Workflow
 Our experimental workflow consists of two stages: (1) launching experiments, and (2) rolling up statistics from experiment outputs.
