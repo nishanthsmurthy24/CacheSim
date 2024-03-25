@@ -47,7 +47,7 @@ uint64_t insertion_distrib[NUM_TYPES][maxRRPV+1];
 uint64_t total_prefetch_downgrades;
 
 // initialize replacement state
-void CACHE::llc_initialize_replacement()
+void CACHE::llc_initialize_replacement(uint64_t _rand_seed)
 {
     //int LLC_SETS = (get_config_number() <= 2) ? 2048 : LLC_SET;
     int LLC_SETS = LLC_SET;
