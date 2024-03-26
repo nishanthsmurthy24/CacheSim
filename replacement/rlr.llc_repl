@@ -20,8 +20,8 @@ uint32_t num_accesses_in_set[LLC_SET];
 uint32_t last_access_type_for_replaced_lines[4];
 int generate_llc_trace = 0; //Flag to indicate LLC access trace dump
 int generate_llc_debug = 0;
-ofstream fs;  //LLC access trace
-ofstream fs1;
+// ofstream fs;  //LLC access trace
+// ofstream fs1;
 uint32_t num_warm_up_accesses = 0;
 uint32_t llc_access_count_limit = 0;
 uint32_t done_setting_llc_access_count_limit = 0;
@@ -32,7 +32,7 @@ void set_access_type_priorities(uint32_t set);
 void reset_additional_stats(uint32_t set);
 
 // initialize replacement state
-void CACHE::llc_initialize_replacement()
+void CACHE::llc_initialize_replacement(uint64_t _rand_seed)
 {
     cout << "Initialize CNT1, CNT2 and threshold" << endl;
 
@@ -71,18 +71,18 @@ void CACHE::llc_initialize_replacement()
     }
 
     //Open LLC debug file
-    if (strcmp(llc_debug_file,"None")) { 
-        cout << "llc access debug = " << llc_debug_file << endl;
-        generate_llc_debug = 1;
-        fs1.open(llc_debug_file);
-    }
+    // if (strcmp(llc_debug_file,"None")) { 
+        // cout << "llc access debug = " << llc_debug_file << endl;
+        // generate_llc_debug = 1;
+        // fs1.open(llc_debug_file);
+    // }
 
     //Open LLC access trace
-    if (strcmp(llc_access_trace,"None")) { 
-        cout << "llc access trace = " << llc_access_trace << endl;
-        generate_llc_trace = 1;
-        fs.open(llc_access_trace);
-    }
+    // if (strcmp(llc_access_trace,"None")) { 
+        // cout << "llc access trace = " << llc_access_trace << endl;
+        // generate_llc_trace = 1;
+        // fs.open(llc_access_trace);
+    // }
 
 }
 
@@ -154,28 +154,28 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
     
     if(generate_llc_debug)
     {
-        fs1 << "set=" << set << " thresh=" << threshold << " DH_priority=";
+        // fs1 << "set=" << set << " thresh=" << threshold << " DH_priority=";
         for (int i=0; i<4; i++)
         {
-            fs1 << access_type_priority[i] << " ";
+            // fs1 << access_type_priority[i] << " ";
         }
 
-        fs1 << "cnt1=";
+        // fs1 << "cnt1=";
         for (int i=0; i<LLC_WAY; i++)
         {
-            fs1 << cnt1[set][i] << " ";
+            // fs1 << cnt1[set][i] << " ";
         }
-        fs1 << "cnt2=";
+        // fs1 << "cnt2=";
         for (int i=0; i<LLC_WAY; i++)
         {
-            fs1 << cnt2[set][i] << " ";
+            // fs1 << cnt2[set][i] << " ";
         }
-        fs1 << "last_access_type=";
+        // fs1 << "last_access_type=";
         for (int i=0; i<LLC_WAY; i++)
         {
-            fs1 << last_access_type[set][i] << " ";
+            // fs1 << last_access_type[set][i] << " ";
         }
-        fs1 << "P=";
+        // fs1 << "P=";
 
     }
 
@@ -194,10 +194,10 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
             else 
                 priority[i] = access_type_priority_in_set[set][last_access_type[set][i]];
 
-            if(generate_llc_debug)
-                fs1 << priority[i] << " ";
+            // if(generate_llc_debug)
+                // fs1 << priority[i] << " ";
 
-            //if (last_access_type[set][i] == 3)
+            // if (last_access_type[set][i] == 3)
             //    priority[i] = 5;
         }
         else
@@ -212,10 +212,10 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
             else
                 priority[i] = 5 + access_type_priority_in_set[set][last_access_type[set][i]];
 
-            if(generate_llc_debug)
-                fs1 << priority[i] << " ";
+            // if(generate_llc_debug)
+                // fs1 << priority[i] << " ";
 
-            //if (last_access_type[set][i] == 3)
+            // if (last_access_type[set][i] == 3)
             //    priority[i] = 10;
         }
     }
@@ -234,7 +234,7 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
         }
     }
     if(generate_llc_debug)
-        fs1 << " victim=" << victim << endl;
+        // fs1 << " victim=" << victim << endl;
 
     return victim;
 }
@@ -244,46 +244,46 @@ uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, c
 void reset_additional_stats(uint32_t set)
 {
     if (set_access_type_priority_en == 0) {
-        if(generate_llc_debug)
-            fs1 << endl << "LLC access count: " << num_llc_accesses << endl;
+        // if(generate_llc_debug)
+            // fs1 << endl << "LLC access count: " << num_llc_accesses << endl;
 
         for (int i=0; i<4; i++) {
 
-            if(generate_llc_debug)
-                fs1 << access_type_strings[i] << " Hits: ";
+            // if(generate_llc_debug)
+                // fs1 << access_type_strings[i] << " Hits: ";
 
             for (int j=0; j<4; j++) {
 
-                if(generate_llc_debug)
-                    fs1 << last_access_type_for_hits[i][j] << " ";
+                // if(generate_llc_debug)
+                    // fs1 << last_access_type_for_hits[i][j] << " ";
 
                 last_access_type_for_hits[i][j] = 0;
             }
 
-            if(generate_llc_debug)
-                fs1 << endl;
+            // if(generate_llc_debug)
+                // fs1 << endl;
         }
     }
     else {
 
-        if(generate_llc_debug)
-            fs1 << endl << "set num: " << set << " access count: " << num_accesses_in_set[set] << endl;
+        // if(generate_llc_debug)
+            // fs1 << endl << "set num: " << set << " access count: " << num_accesses_in_set[set] << endl;
 
         for (int i=0; i<4; i++) {
 
-            if(generate_llc_debug)
-                fs1 << access_type_strings[i] << " Hits: ";
+            // if(generate_llc_debug)
+                // fs1 << access_type_strings[i] << " Hits: ";
 
             for (int j=0; j<4; j++) {
 
-                if(generate_llc_debug)
-                    fs1 << last_access_type_for_hits_in_set[set][i][j] << " ";
+                // if(generate_llc_debug)
+                    // fs1 << last_access_type_for_hits_in_set[set][i][j] << " ";
 
                 last_access_type_for_hits_in_set[set][i][j] = 0;
             }
 
-            if(generate_llc_debug)
-                fs1 << endl;
+            // if(generate_llc_debug)
+                // fs1 << endl;
         }
     }
     
@@ -321,11 +321,11 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
     if(warmup_complete[cpu] && !done_setting_llc_access_count_limit) {
 
         if (generate_llc_trace == 1) {
-            fs << "Warm up Complete" << endl;
+            // fs << "Warm up Complete" << endl;
         }
 
         if (generate_llc_debug == 1) {
-            fs1 << "Warm up Complete" << endl;
+            // fs1 << "Warm up Complete" << endl;
         }
 
         num_warm_up_accesses = num_llc_accesses;
@@ -344,12 +344,12 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
 
     }
 
-    if (generate_llc_trace == 1) {
-        if (hit)
-            fs << ip << " " << type << " " << full_addr << " 1" << endl;
-        else
-            fs << ip << " " << type << " " << full_addr << " 0" << endl;
-    }
+    // if (generate_llc_trace == 1) {
+        // if (hit)
+            // fs << ip << " " << type << " " << full_addr << " 1" << endl;
+        // else
+            // fs << ip << " " << type << " " << full_addr << " 0" << endl;
+    // }
 
 
     //Increment cnt1 for all ways
@@ -437,10 +437,10 @@ void CACHE::llc_replacement_final_stats()
     cout << "PREFETCH = " << last_access_type_for_replaced_lines[2] << endl;
     cout << "WRITEBACK = " << last_access_type_for_replaced_lines[3] << endl;
 
-    if (generate_llc_trace == 1) 
-        fs.close();
+    // if (generate_llc_trace == 1) 
+        // fs.close();
 
-    if(generate_llc_debug)
-        fs1.close();
+    // if(generate_llc_debug)
+        // fs1.close();
     
 }
