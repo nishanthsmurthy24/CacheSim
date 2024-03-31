@@ -21,6 +21,7 @@ PYTHIA = --l2c_prefetcher_types=scooby --config=$(PYTHIA_HOME)/config/pythia.ini
 
 # experiments for Figure 10(a) and Figure 8
 nopref						$(BASE) $(NOPREF)
+stride                  $(BASE) $(STRIDE)
 spp						$(BASE) $(SPP_DEV2)
 bingo						$(BASE) $(BINGO)
 mlop						$(BASE) $(MLOP)
