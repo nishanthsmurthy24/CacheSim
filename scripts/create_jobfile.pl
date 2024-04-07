@@ -15,6 +15,7 @@ my $slurm_partition = "small";
 my $exclude_list;
 my $include_list;
 my $extra;
+my $wall_time;
 
 GetOptions('tlist=s' => \$tlist_file,
 	   'exp=s' => \$exp_file,
@@ -26,6 +27,7 @@ GetOptions('tlist=s' => \$tlist_file,
 	   'exclude=s' => \$exclude_list,
 	   'include=s' => \$include_list,
 	   'extra=s' => \$extra,
+	   'time=s' => \$wall_time,
 ) or die "Usage: $0 --exe <executable> --exp <exp file> --tlist <trace list>\n";
 
 die "\$PYTHIA_HOME env variable is not defined.\nHave you sourced setvars.sh?\n" unless defined $ENV{'PYTHIA_HOME'};
@@ -100,7 +102,7 @@ foreach $trace (@trace_info)
 		}
 		else
 		{
-			$slurm_cmd = "sbatch -p $slurm_partition --mincpus=1 -t 5:00:00";
+			$slurm_cmd = "sbatch -p $slurm_partition --mincpus=1 -t $wall_time";
 			if (defined $include_list)
 			{
 				$slurm_cmd = $slurm_cmd." --nodelist=${include_nodes_list}";

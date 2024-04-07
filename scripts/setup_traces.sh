@@ -8,6 +8,7 @@ perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
 gdown 1iTb4rirR2lAPtEs-rbuT_XrlYe9cJc9L
 unzip PARSEC-2.1.zip -d ../traces/
 rm PARSEC-2.1.zip
+rm -rf ../traces/__MACOSX
 
 # Dwonload LIGRA
 # python3 google_drive.py 1FKK32PuoJYEBhEQ0shX7Ej0BgUJ3DMBq ../traces/
