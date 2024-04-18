@@ -349,6 +349,10 @@ int parse_knobs(void* user, const char* section, const char* name, const char* v
     {
 		knob::l1d_prefetcher_types.push_back(string(value));
     }
+	else if (MATCH("", "llc_prefetcher_types"))
+    {
+		knob::llc_prefetcher_types.push_back(string(value));
+    }
     else if (MATCH("", "l1d_perfect"))
     {
 		knob::l1d_perfect = !strcmp(value, "true") ? true : false;
