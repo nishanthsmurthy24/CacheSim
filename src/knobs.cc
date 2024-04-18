@@ -16,6 +16,7 @@ namespace knob
 	bool     knob_low_bandwidth = false;
 	vector<string> 	 l2c_prefetcher_types;
 	vector<string> 	 l1d_prefetcher_types;
+	vector<string>	 llc_prefetcher_types;
 	bool     l1d_perfect = false;
 	bool     l2c_perfect = false;
 	bool     llc_perfect = false;
