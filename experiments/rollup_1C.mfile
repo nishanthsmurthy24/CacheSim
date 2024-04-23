@@ -2,6 +2,45 @@ Core_0_IPC : sum
 Core_0_branch_prediction_accuracy : sum
 Core_0_branch_MPKI : sum
 Core_0_average_ROB_occupancy_at_mispredict : sum
+
+Core_0_L1D_total_access : sum
+Core_0_L1D_total_hit : sum
+Core_0_L1D_total_miss : sum
+Core_0_L1D_loads : sum
+Core_0_L1D_load_hit : sum
+Core_0_L1D_load_miss : sum
+Core_0_L1D_average_miss_latency : sum
+
+Core_0_L1I_total_access : sum
+Core_0_L1I_total_hit : sum
+Core_0_L1I_total_miss : sum
+Core_0_L1I_loads : sum
+Core_0_L1I_load_hit : sum
+Core_0_L1I_load_miss : sum
+Core_0_L1I_average_miss_latency : sum
+
+Core_0_L2C_total_access : sum
+Core_0_L2C_total_hit : sum
+Core_0_L2C_total_miss : sum
+Core_0_L2C_loads : sum
+Core_0_L2C_load_hit : sum
+Core_0_L2C_load_miss : sum
+
+Core_0_L2C_prefetches : sum
+Core_0_L2C_prefetch_hit : sum
+Core_0_L2C_prefetch_miss : sum
+Core_0_L2C_writebacks : sum
+Core_0_L2C_writeback_hit : sum
+Core_0_L2C_writeback_miss : sum
+Core_0_L2C_prefetch_requested : sum
+Core_0_L2C_prefetch_dropped : sum
+Core_0_L2C_prefetch_issued : sum
+Core_0_L2C_prefetch_filled : sum
+Core_0_L2C_prefetch_useful : sum
+Core_0_L2C_prefetch_useless : sum
+Core_0_L2C_prefetch_late : sum
+Core_0_L2C_average_miss_latency : sum
+
 Core_0_LLC_total_access : sum
 Core_0_LLC_total_hit : sum
 Core_0_LLC_total_miss : sum
@@ -25,7 +64,9 @@ Core_0_LLC_prefetch_useful : sum
 Core_0_LLC_prefetch_useless : sum
 Core_0_LLC_prefetch_late : sum
 Core_0_LLC_average_miss_latency : sum
+
 avg_congested_cycle : sum
+
 DRAM_bw_pochs : sum
 DRAM_bw_level_0 : sum
 DRAM_bw_level_1 : sum
